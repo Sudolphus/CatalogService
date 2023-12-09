@@ -47,9 +47,17 @@ public class CatalogController : ControllerBase
     {
       return NotFound();
     }
-    if (product.Name.Length < 3 || product.Price < 0 || product.Inventory < 0)
+    if (product.Name.Length < 3)
     {
-      return BadRequest();
+      return BadRequest("Name must be at least 3 characters");
+    }
+    else if (product.Price < 0)
+    {
+      return BadRequest("Price must be non-negative");
+    }
+    else if (product.Inventory < 0)
+    {
+      return BadRequest("Inventory cannot be negative");
     }
     productToEdit.Name = product.Name;
     productToEdit.Price = product.Price;
