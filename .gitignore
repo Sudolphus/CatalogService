@@ -1,4 +1,4 @@
 .vscode/
 bin/
 obj/
-Catalog.Data.db
+Catalog.Data.db*

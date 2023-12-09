@@ -40,7 +40,7 @@ public class CatalogController : ControllerBase
   }
 
   [HttpPut("{id}")]
-  public async Task<ActionResult<Product>> UpdateProduct(int id, [FromBody] Product product)
+  public async Task<ActionResult<Product>> UpdateProduct(int id, Product product)
   {
     var productToEdit = await _context.Products.FindAsync(id);
     if (productToEdit == null)
@@ -55,11 +55,11 @@ public class CatalogController : ControllerBase
     productToEdit.Price = product.Price;
     productToEdit.Inventory = product.Inventory;
     await _context.SaveChangesAsync();
-    return CreatedAtRoute(nameof(GetProductById), new { id }, product);
+    return Ok(product);
   }
 
   [HttpPatch("{id}")]
-  public async Task<ActionResult<Product>> UpdateInventory(int id, [FromBody] int inventoryChange)
+  public async Task<ActionResult<Product>> UpdateInventory(int id, int inventoryChange)
   {
     var product = await _context.Products.FindAsync(id);
     if (product == null)
@@ -72,7 +72,7 @@ public class CatalogController : ControllerBase
     }
     product.Inventory += inventoryChange;
     await _context.SaveChangesAsync();
-    return CreatedAtRoute(nameof(GetProductById), new { id }, product);
+    return Ok(product);
   }
 
   [HttpDelete("{id}")]
