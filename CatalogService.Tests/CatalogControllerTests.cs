@@ -3,7 +3,6 @@ using CatalogService.Controllers;
 using CatalogService.Models;
 using Microsoft.EntityFrameworkCore;
 using Xunit;
-using Microsoft.AspNetCore.Http.Features;
 
 
 namespace CatalogService.Tests;
@@ -164,6 +163,25 @@ public class CatalogControllerTests
 
         // Assert
         Assert.Equal(product1.Inventory, product?.Inventory);
+    }
+
+    [Fact]
+    public async Task DeleteProduct_RemovesProduct()
+    {
+        // Arrange
+        using var connection = Helper.GetSqliteConnection();
+        var options = Helper.GetSqliteContextOptions(connection);
+        AddTestData(options);
+
+        using var context = new CatalogContext(options);
+        var controller = new CatalogController(context);
+
+        // Act
+        await controller.DeleteProduct(1);
+        var product = (await controller.GetProductById(1)).Value;
+
+        // Assert
+        Assert.Null(product);
     }
 
     #region Helpers
