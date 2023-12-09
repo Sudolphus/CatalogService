@@ -99,6 +99,73 @@ public class CatalogControllerTests
         Assert.Equal(inventory, product.Inventory);
     }
 
+    [Fact]
+    public async Task UpdateProduct_UpdatesValues_WhenProductExists()
+    {
+        // Arrange
+        using var connection = Helper.GetSqliteConnection();
+        var options = Helper.GetSqliteContextOptions(connection);
+        AddTestData(options);
+
+        using var context = new CatalogContext(options);
+        var controller = new CatalogController(context);
+        string newName = "new name";
+        decimal newPrice = 99.99M;
+        int newInventory = 100;
+        var edittedProduct = CreateProduct(newName, newPrice, newInventory);
+
+        // Act
+        await controller.UpdateProduct(1, edittedProduct);
+        var product = (await controller.GetProductById(1)).Value;
+
+        // Assert
+        Assert.Equal(newName, product?.Name);
+        Assert.Equal(newPrice, product?.Price);
+        Assert.Equal(newInventory, product?.Inventory);
+    }
+
+    [Fact]
+    public async Task UpdateInventory_IncrementsAndDecrements()
+    {
+        // Arrange
+        using var connection = Helper.GetSqliteConnection();
+        var options = Helper.GetSqliteContextOptions(connection);
+        AddTestData(options);
+
+        using var context = new CatalogContext(options);
+        var controller = new CatalogController(context);
+        int changeValue = 4;
+
+        // Act
+        await controller.UpdateInventory(1, changeValue);
+        await controller.UpdateInventory(2, changeValue * -1);
+        var products = (await controller.GetProducts()).Value;
+
+        // Assert
+        Assert.Equal(product1.Inventory + changeValue, products?.First().Inventory);
+        Assert.Equal(product2.Inventory - changeValue, products?.Last().Inventory);
+    }
+
+    [Fact]
+    public async Task UpdateInventory_DoesNotDecrementBelowZero()
+    {
+        // Arrange
+        using var connection = Helper.GetSqliteConnection();
+        var options = Helper.GetSqliteContextOptions(connection);
+        AddTestData(options);
+
+        using var context = new CatalogContext(options);
+        var controller = new CatalogController(context);
+        int changeValue = -100;
+
+        // Act
+        await controller.UpdateInventory(1, changeValue);
+        var product = (await controller.GetProductById(1)).Value;
+
+        // Assert
+        Assert.Equal(product1.Inventory, product?.Inventory);
+    }
+
     #region Helpers
 
     private static void AddTestData(DbContextOptions<CatalogContext> options)
