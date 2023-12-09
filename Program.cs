@@ -11,7 +11,7 @@ builder.Services.AddSwaggerGen();
 if (builder.Environment.IsDevelopment())
 {
     builder.Services.AddDbContext<CatalogContext>(options =>
-        options.UseSqlite(builder.Configuration.GetConnectionString("CatalogContext")));
+        options.UseSqlite(builder.Configuration.GetConnectionString("CatalogContextDevelopment")));
 }
 else
 {
