@@ -34,65 +34,97 @@ public class CatalogController : ControllerBase
   [HttpPost]
   public async Task<ActionResult<Product>> CreateProduct(Product product)
   {
-    _context.Products.Add(product);
-    await _context.SaveChangesAsync();
-    return CreatedAtAction(nameof(GetProductById), new { id = product.Id }, product);
+    using var transaction = await _context.Database.BeginTransactionAsync();
+    try
+    {
+        _context.Products.Add(product);
+        await _context.SaveChangesAsync();
+        await transaction.CommitAsync();
+        return CreatedAtAction(nameof(GetProductById), new { id = product.Id }, product);
+    }
+    catch (Exception)
+    {
+        await transaction.RollbackAsync();
+        return StatusCode(500, "An error occured while creating the product.");
+    }
   }
 
   [HttpPut("{id}")]
   public async Task<ActionResult<Product>> UpdateProduct(int id, Product product)
   {
-    var productToEdit = await _context.Products.FindAsync(id);
-    if (productToEdit == null)
+    using var transaction = await _context.Database.BeginTransactionAsync();
+    try
     {
-      return NotFound();
+      var productToEdit = await _context.Products.FindAsync(id);
+      if (productToEdit == null)
+      {
+        return NotFound();
+      }
+      if (product.Name.Length < 3 || product.Price < 0 || product.Inventory < 0)
+      {
+        return BadRequest();
+      }
+      productToEdit.Name = product.Name;
+      productToEdit.Price = product.Price;
+      productToEdit.Inventory = product.Inventory;
+      await _context.SaveChangesAsync();
+      await transaction.CommitAsync();
+      return Ok(product);
     }
-    if (product.Name.Length < 3)
+    catch (Exception)
     {
-      return BadRequest("Name must be at least 3 characters");
+      await transaction.RollbackAsync();
+      return StatusCode(500, "An error occured while updating the product.");
     }
-    else if (product.Price < 0)
-    {
-      return BadRequest("Price must be non-negative");
-    }
-    else if (product.Inventory < 0)
-    {
-      return BadRequest("Inventory cannot be negative");
-    }
-    productToEdit.Name = product.Name;
-    productToEdit.Price = product.Price;
-    productToEdit.Inventory = product.Inventory;
-    await _context.SaveChangesAsync();
-    return Ok(product);
   }
 
   [HttpPatch("{id}")]
   public async Task<ActionResult<Product>> UpdateInventory(int id, int inventoryChange)
   {
-    var product = await _context.Products.FindAsync(id);
-    if (product == null)
+    using var transaction = await _context.Database.BeginTransactionAsync();
+    try
     {
-      return NotFound();
+      var product = await _context.Products.FindAsync(id);
+      if (product == null)
+      {
+        return NotFound();
+      }
+      if (product.Inventory + inventoryChange < 0)
+      {
+        return BadRequest("Inventory cannot be negative");
+      }
+      product.Inventory += inventoryChange;
+      await _context.SaveChangesAsync();
+      await transaction.CommitAsync();
+      return Ok(product);
     }
-    if (product.Inventory + inventoryChange < 0)
+    catch (Exception)
     {
-      return BadRequest("Inventory cannot be negative");
+      await transaction.RollbackAsync();
+      return StatusCode(500, "An error occured while updating the product.");
     }
-    product.Inventory += inventoryChange;
-    await _context.SaveChangesAsync();
-    return Ok(product);
   }
 
   [HttpDelete("{id}")]
   public async Task<ActionResult<Product>> DeleteProduct(int id)
   {
-    var product = await _context.Products.FindAsync(id);
-    if (product == null)
+    using var transaction = await _context.Database.BeginTransactionAsync();
+    try
     {
-      return NotFound();
+      var product = await _context.Products.FindAsync(id);
+      if (product == null)
+      {
+        return NotFound();
+      }
+      _context.Products.Remove(product);
+      await _context.SaveChangesAsync();
+      await transaction.CommitAsync();
+      return NoContent();
     }
-    _context.Products.Remove(product);
-    await _context.SaveChangesAsync();
-    return NoContent();
+    catch (Exception)
+    {
+      await transaction.RollbackAsync();
+      return StatusCode(500, "An error occured while deleting the product.");
+    }
   }
 }

@@ -124,6 +124,27 @@ public class CatalogControllerTests
     }
 
     [Fact]
+    public async Task UpdateProduct_DoesNotUpdateValues_WhenModelIsNotValid()
+    {
+        // Arrange
+        using var connection= Helper.GetSqliteConnection();
+        var options = Helper.GetSqliteContextOptions(connection);
+        AddTestData(options);
+
+        using var context = new CatalogContext(options);
+        var controller = new CatalogController(context);
+        string newName = String.Empty;
+        var edittedProduct = CreateProduct(newName, 9.99M, 5);
+
+        // Act
+        await controller.UpdateProduct(1, edittedProduct);
+        var product = (await controller.GetProductById(1)).Value;
+
+        // Assert
+        Assert.Equal(product1.Name, product?.Name);
+    }
+
+    [Fact]
     public async Task UpdateInventory_IncrementsAndDecrements()
     {
         // Arrange
